@@ -20,11 +20,12 @@ from kivy.event import EventDispatcher
 
 
 FingerprintManager = autoclass("android.hardware.fingerprint.FingerprintManager")
+FingerprintCallback = autoclass("org.fingerprint.FingerprintCallback")
 activity = autoclass("org.kivy.android.PythonActivity").mActivity
 
 
 class PyFingerprintCallback(PythonJavaClass):
-    __javainterfaces__ = ["org/fingerprint/callback/FingerprintCallbackInterface"]
+    __javainterfaces__ = ["org/fingerprint/FingerprintCallbackInterface"]
     __javacontext__ = "app"
 
     def __init__(self, dispatcher):
@@ -55,6 +56,8 @@ class PyFingerprintCallback(PythonJavaClass):
 class Fingerprint(EventDispatcher):
 
     _manager = None
+    _py_callback = None
+    _callback = None
     __events__ = (
         "on_authentication_error",
         "on_authentication_failed",
@@ -68,7 +71,9 @@ class Fingerprint(EventDispatcher):
             self._manager = cast(
                 FingerprintManager,
                 activity.getSystemService(FingerprintManager))
-            self._callback = PyFingerprintCallback(self)
+            self._py_callback = PyFingerprintCallback(self)
+            self._callback = FingerprintCallback()
+            self._callback.setDispatcher(self._py_callback)
         return self._manager
 
     def authenticate(self):
